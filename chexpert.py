@@ -10,12 +10,13 @@ import requests
 requests.packages.urllib3.disable_warnings()
 import ssl
 
-from keras.datasets import cifar10
 from keras.utils import np_utils
 from keras.preprocessing.image import ImageDataGenerator
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras import backend as K
+
+from data import chexpert_data as chexdata
 
 batch_size = 100
 nb_classes = 10
@@ -25,7 +26,9 @@ nb_epoch = 300
 img_rows, img_cols = 32, 32
 img_channels = 3
 
+# ???
 img_dim = (img_channels, img_rows, img_cols) if K.image_dim_ordering() == "th" else (img_rows, img_cols, img_channels)
+
 depth = 40
 nb_dense_block = 3
 growth_rate = 12
@@ -44,8 +47,8 @@ print("Building model...")
 
 import pdb
 pdb.set_trace()
-
-(trainX, trainY), (testX, testY) = cifar10.load_data()
+folder = '/Volumes/work/data/medical/CheXpert-v1.0-small'
+(trainX, trainY), (testX, testY) = chexdata.load_data(folder)
 
 trainX = trainX.astype('float32')
 testX = testX.astype('float32')
@@ -64,7 +67,7 @@ generator = ImageDataGenerator(rotation_range=15,
 generator.fit(trainX, seed=0)
 
 # Load model
-weights_file="weights/DenseNet-40-12-CIFAR10.h5"
+weights_file="weights/DenseNet-40-12-Chexpert.h5"
 if os.path.exists(weights_file):
     #model.load_weights(weights_file, by_name=True)
     print("Model loaded.")
@@ -92,4 +95,3 @@ accuracy = metrics.accuracy_score(yTrue, yPred) * 100
 error = 100 - accuracy
 print("Accuracy : ", accuracy)
 print("Error : ", error)
-
