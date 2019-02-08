@@ -33,6 +33,20 @@ read train.csv:
         global_nd_array.append()
 '''
 
+'''
+replace:
+    empty by 0
+    -1 by 0
+'''
+def replace_label(item):
+    if item == -1.0:
+        return 0.0
+    elif item == '':
+        return 0.0
+    else:
+        return item
+            
+
 def load_data_sub(_file):
     x_data = []
     x_label = []
@@ -40,8 +54,10 @@ def load_data_sub(_file):
     csv_to_use = csv_data[1:]
     base_path = '/Volumes/work/data/medical'
     for idx, parts in enumerate(csv_to_use):
+        if idx == 100:
+            break
         rel_path = parts[0]
-        label_vec = parts[5:]
+        label_vec = list(map(lambda x: replace_label(x), parts[5:]))
         image = convert_image(os.path.join(base_path, rel_path))
         x_data.append(image)
         x_label.append(label_vec)
