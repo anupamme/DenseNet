@@ -141,8 +141,8 @@ def DenseNet(input_shape=None, depth=40, nb_dense_block=3, growth_rate=12, nb_fi
     if activation not in ['softmax', 'sigmoid']:
         raise ValueError('activation must be one of "softmax" or "sigmoid"')
 
-    if activation == 'sigmoid' and classes != 1:
-        raise ValueError('sigmoid activation can only be used when classes = 1')
+#    if activation == 'sigmoid' and classes != 1:
+#        raise ValueError('sigmoid activation can only be used when classes = 1')
 
     # Determine proper input shape
     input_shape = _obtain_input_shape(input_shape,

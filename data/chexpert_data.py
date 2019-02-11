@@ -39,12 +39,14 @@ replace:
     -1 by 0
 '''
 def replace_label(item):
-    if item == -1.0:
-        return 0.0
-    elif item == '':
+    if item == '':
         return 0.0
     else:
-        return item
+        _fitem = float(item)
+        if _fitem == -1.0:
+            return 0.0
+        else:
+            return _fitem
             
 
 def load_data_sub(_file):
