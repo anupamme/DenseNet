@@ -4,7 +4,8 @@ import os.path
 
 import densenet
 import numpy as np
-import sklearn.metrics as metrics
+#import sklearn.metrics as metrics
+from sklearn.metrics import accuracy_score
 
 import requests
 requests.packages.urllib3.disable_warnings()
@@ -29,14 +30,12 @@ img_channels = 3
 # ???
 img_dim = (img_channels, img_rows, img_cols) if K.image_dim_ordering() == "th" else (img_rows, img_cols, img_channels)
 
-depth = 13
+depth = 10
 nb_dense_block = 3
 growth_rate = 12
 nb_filter = -1
 dropout_rate = 0.0 # 0.0 for data augmentation
 
-import pdb
-pdb.set_trace()
 model = densenet.DenseNet(img_dim, depth=depth, nb_dense_block=nb_dense_block,
                           growth_rate=growth_rate, nb_filter=nb_filter, dropout_rate=dropout_rate, classes=14, weights=None, activation='sigmoid')
 print("Model created")
@@ -50,10 +49,14 @@ print("Building model...")
 import pdb
 pdb.set_trace()
 folder = '/Volumes/work/data/medical/CheXpert-v1.0-small'
+#folder = '/home/mediratta/CheXpert-v1.0-small/'
 (trainX, trainY), (testX, testY) = chexdata.load_data(folder)
 
 trainX = trainX.astype('float32')
 testX = testX.astype('float32')
+
+trainY = trainY.astype('float32')
+testY = testY.astype('float32')
 
 trainX = densenet.preprocess_input(trainX)
 testX = densenet.preprocess_input(testX)

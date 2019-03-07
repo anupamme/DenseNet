@@ -55,6 +55,7 @@ def load_data_sub(_file):
     csv_data = csv.read_csv(_file)
     csv_to_use = csv_data[1:]
     base_path = '/Volumes/work/data/medical'
+#    base_path = '/home/mediratta/'
     for idx, parts in enumerate(csv_to_use):
         if idx == 100:
             break
