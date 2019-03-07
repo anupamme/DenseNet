@@ -4,8 +4,8 @@ import os.path
 
 import densenet
 import numpy as np
-#import sklearn.metrics as metrics
-from sklearn.metrics import accuracy_score
+import sklearn.metrics as metrics
+#from sklearn.metrics import accuracy_score
 
 import requests
 requests.packages.urllib3.disable_warnings()
@@ -46,8 +46,6 @@ model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=["accurac
 print("Finished compiling")
 print("Building model...")
 
-import pdb
-pdb.set_trace()
 folder = '/Volumes/work/data/medical/CheXpert-v1.0-small'
 #folder = '/home/mediratta/CheXpert-v1.0-small/'
 (trainX, trainY), (testX, testY) = chexdata.load_data(folder)
