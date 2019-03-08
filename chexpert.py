@@ -30,18 +30,18 @@ img_channels = 3
 # ???
 img_dim = (img_channels, img_rows, img_cols) if K.image_dim_ordering() == "th" else (img_rows, img_cols, img_channels)
 
-depth = 10
-nb_dense_block = 3
-growth_rate = 12
-nb_filter = -1
-dropout_rate = 0.0 # 0.0 for data augmentation
+depth = 10  # 121
+nb_dense_block = 3  # ??
+growth_rate = 12 # ??
+nb_filter = -1  # ??
+dropout_rate = 0.0 # 0.0 for data augmentation ??
 
 model = densenet.DenseNet(img_dim, depth=depth, nb_dense_block=nb_dense_block,
                           growth_rate=growth_rate, nb_filter=nb_filter, dropout_rate=dropout_rate, classes=14, weights=None, activation='sigmoid')
 print("Model created")
 
 model.summary()
-optimizer = Adam(lr=1e-3) # Using Adam instead of SGD to speed up training
+optimizer = Adam(lr=1e-4) # Using Adam instead of SGD to speed up training
 model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=["accuracy"])
 print("Finished compiling")
 print("Building model...")
@@ -94,9 +94,10 @@ model.fit_generator(generator.flow(trainX, Y_train, batch_size=batch_size),
 
 yPreds = model.predict(testX)
 yPred = np.argmax(yPreds, axis=1)
+yPred = list(map(lambda x: round(x), yPreds))
 yTrue = Y_test
 
-accuracy = metrics.accuracy_score(yTrue, yPred) * 100
+accuracy = metrics.accuracy_score(yTrue, yPreds) * 100
 error = 100 - accuracy
 print("Accuracy : ", accuracy)
 print("Error : ", error)
