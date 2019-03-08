@@ -94,10 +94,11 @@ model.fit_generator(generator.flow(trainX, Y_train, batch_size=batch_size),
 
 yPreds = model.predict(testX)
 yPred = np.argmax(yPreds, axis=1)
-yPred = list(map(lambda x: round(x), yPreds))
+yPred = list(map(lambda x: list(map(lambda y: round(y), x)), yPreds))
+yPred_np = np.asarray(yPred)
 yTrue = Y_test
 
-accuracy = metrics.accuracy_score(yTrue, yPreds) * 100
+accuracy = metrics.accuracy_score(yTrue, yPred_np) * 100
 error = 100 - accuracy
 print("Accuracy : ", accuracy)
 print("Error : ", error)
