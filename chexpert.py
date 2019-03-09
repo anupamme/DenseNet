@@ -30,14 +30,14 @@ img_channels = 3
 # ???
 img_dim = (img_channels, img_rows, img_cols) if K.image_dim_ordering() == "th" else (img_rows, img_cols, img_channels)
 
-depth = 10  # 121
+depth = 20  # 121
 nb_dense_block = 3  # ??
 growth_rate = 12 # ??
 nb_filter = -1  # ??
 dropout_rate = 0.0 # 0.0 for data augmentation ??
 
 model = densenet.DenseNet(img_dim, depth=depth, nb_dense_block=nb_dense_block,
-                          growth_rate=growth_rate, nb_filter=nb_filter, dropout_rate=dropout_rate, classes=14, weights=None, activation='softmax')
+                          growth_rate=growth_rate, nb_filter=nb_filter, dropout_rate=dropout_rate, classes=14, weights=None, activation='sigmoid')
 print("Model created")
 
 model.summary()
