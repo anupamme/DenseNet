@@ -42,7 +42,7 @@ print("Model created")
 
 model.summary()
 optimizer = Adam(lr=1e-4) # Using Adam instead of SGD to speed up training
-model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['binary_accuracy', 'categorical_accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=["accuracy"])
 print("Finished compiling")
 print("Building model...")
 
