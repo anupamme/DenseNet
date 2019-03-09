@@ -37,7 +37,7 @@ nb_filter = -1  # ??
 dropout_rate = 0.0 # 0.0 for data augmentation ??
 
 model = densenet.DenseNet(img_dim, depth=depth, nb_dense_block=nb_dense_block,
-                          growth_rate=growth_rate, nb_filter=nb_filter, dropout_rate=dropout_rate, classes=14, weights=None, activation='sigmoid')
+                          growth_rate=growth_rate, nb_filter=nb_filter, dropout_rate=dropout_rate, classes=14, weights=None, activation='softmax')
 print("Model created")
 
 model.summary()
@@ -93,7 +93,8 @@ model.fit_generator(generator.flow(trainX, Y_train, batch_size=batch_size),
                     validation_steps=testX.shape[0] // batch_size, verbose=1)
 
 yPreds = model.predict(testX)
-yPred = np.argmax(yPreds, axis=1)
+#yPred = np.argmax(yPreds, axis=1)
+# threshholds
 yPred = list(map(lambda x: list(map(lambda y: round(y), x)), yPreds))
 yPred_np = np.asarray(yPred)
 yTrue = Y_test

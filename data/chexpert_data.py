@@ -44,7 +44,7 @@ def replace_label(item):
     else:
         _fitem = float(item)
         if _fitem == -1.0:
-            return 0.0
+            return _fitem   # multi_class classification
         else:
             return _fitem
             
