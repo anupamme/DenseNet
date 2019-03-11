@@ -1,8 +1,8 @@
-import cv2
 import numpy as np
 import os
 
 from utils import csv_reader as csv
+from utils import img_util as img
 
 WIDTH = 320
 HEIGHT = 320
@@ -44,7 +44,7 @@ def replace_label(item):
     else:
         _fitem = float(item)
         if _fitem == -1.0:
-            return _fitem   # multi_class classification
+            return 1   # multi_class classification
         else:
             return _fitem
             
@@ -57,11 +57,11 @@ def load_data_sub(_file):
     base_path = '/Volumes/work/data/medical'
 #    base_path = '/home/mediratta/'
     for idx, parts in enumerate(csv_to_use):
-        if idx == 100:
+        if idx == 10000:
             break
         rel_path = parts[0]
         label_vec = list(map(lambda x: replace_label(x), parts[5:]))
-        image = convert_image(os.path.join(base_path, rel_path))
+        image = img.convert_image(os.path.join(base_path, rel_path))
         x_data.append(image)
         x_label.append(label_vec)
     return x_data, x_label
@@ -72,8 +72,3 @@ def load_data(image_folder):
     valid_file = os.path.join(image_folder, 'valid.csv')
     x_valid, label_valid = load_data_sub(valid_file)
     return (np.array(x_train), np.array(label_train)), (np.array(x_valid), np.array(label_valid))
-
-def convert_image(image_path):
-    img = cv2.imread(image_path)
-    img = cv2.resize(img, (WIDTH, HEIGHT), cv2.INTER_AREA)
-    return img

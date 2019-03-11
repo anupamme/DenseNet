@@ -18,88 +18,139 @@ from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras import backend as K
 
 from data import chexpert_data as chexdata
+from utils import img_util
 
-batch_size = 16
-#nb_classes = 10
+# training variables:
+batch_size = 8
 nb_epoch = 3
 
-# XXX
+# model variables
+threshhold = 0.1
+
 img_rows, img_cols = 320, 320
 img_channels = 3
 
-# ???
-img_dim = (img_channels, img_rows, img_cols) if K.image_dim_ordering() == "th" else (img_rows, img_cols, img_channels)
+    
+    
 
-depth = 20  # 121
-nb_dense_block = 3  # ??
-growth_rate = 12 # ??
-nb_filter = -1  # ??
-dropout_rate = 0.0 # 0.0 for data augmentation ??
+def create_model(img_channels=3, img_rows=320, img_cols=320, depth=40, activation='sigmoid'):
+    img_dim = (img_channels, img_rows, img_cols) if K.image_dim_ordering() == "th" else (img_rows, img_cols, img_channels)
+    model = densenet.DenseNet(img_dim, depth=depth, nb_dense_block=3, growth_rate=12, nb_filter=-1, dropout_rate=0.0, classes=14, weights=None, activation=activation)
+    print("Model created")
+    model.summary()
+    optimizer = Adam(lr=1e-4) # Using Adam instead of SGD to speed up training
+    model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=["accuracy"])
+    print("Finished compiling")
+    print("Building model...")
+    return model
 
-model = densenet.DenseNet(img_dim, depth=depth, nb_dense_block=nb_dense_block,
-                          growth_rate=growth_rate, nb_filter=nb_filter, dropout_rate=dropout_rate, classes=14, weights=None, activation='sigmoid')
-print("Model created")
 
-model.summary()
-optimizer = Adam(lr=1e-4) # Using Adam instead of SGD to speed up training
-model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=["accuracy"])
-print("Finished compiling")
-print("Building model...")
+def prepare_training_data():
+    folder = '/Volumes/work/data/medical/CheXpert-v1.0-small'
+    #folder = '/home/mediratta/CheXpert-v1.0-small/'
+    (trainX, trainY), (testX, testY) = chexdata.load_data(folder)
 
-folder = '/Volumes/work/data/medical/CheXpert-v1.0-small'
-#folder = '/home/mediratta/CheXpert-v1.0-small/'
-(trainX, trainY), (testX, testY) = chexdata.load_data(folder)
+    _type = 'float32'
+    trainX = trainX.astype(_type)
+    testX = testX.astype(_type)
+    trainY = trainY.astype(_type)
+    testY = testY.astype(_type)
 
-trainX = trainX.astype('float32')
-testX = testX.astype('float32')
+    trainX = densenet.preprocess_input(trainX)
+    testX = densenet.preprocess_input(testX)
 
-trainY = trainY.astype('float32')
-testY = testY.astype('float32')
+    #Y_train = np_utils.to_categorical(trainY)
+    #Y_test = np_utils.to_categorical(testY)
+    Y_train = trainY
+    Y_test = testY
+    return (trainX, Y_train), (testX, Y_test)
 
-trainX = densenet.preprocess_input(trainX)
-testX = densenet.preprocess_input(testX)
-
-#Y_train = np_utils.to_categorical(trainY)
-#Y_test = np_utils.to_categorical(testY)
-Y_train = trainY
-Y_test = testY
-
-generator = ImageDataGenerator(rotation_range=15,
-                               width_shift_range=5./32,
-                               height_shift_range=5./32,
-                               horizontal_flip=True)
-
-generator.fit(trainX, seed=0)
+def augument_training_data(trainX):
+    _type = 'int8'
+    trainX = trainX.astype(_type)
+    generator = ImageDataGenerator(rotation_range=15,
+                                   width_shift_range=5./32,
+                                   height_shift_range=5./32,
+                                   horizontal_flip=True)
+    generator = ImageDataGenerator()
+#    generator.fit(trainX, seed=0)
+    return generator
 
 # Load model
+def load_model(model, weights_file):
+    if os.path.exists(weights_file):
+        model.load_weights(weights_file, by_name=True)
+        print("Model loaded.")
+        return True, model
+    else:
+        return False, model
+
+def do_training(model, trainX, Y_train, testX, Y_test, weights_file, batch_size=16, nb_epoch=3):        
+    lr_reducer      = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1),
+                                        cooldown=0, patience=5, min_lr=1e-5)
+    model_checkpoint= ModelCheckpoint(weights_file, monitor="val_acc", save_best_only=True,
+                                      save_weights_only=True, verbose=1)
+
+    callbacks=[lr_reducer, model_checkpoint]
+    _var = generator.flow(trainX, Y_train, batch_size=batch_size)
+    #_var = (trainX, Y_train)
+    model.fit_generator(_var,
+                        steps_per_epoch=len(trainX) // batch_size, epochs=nb_epoch,
+                        callbacks=callbacks,
+                        validation_data=(testX, Y_test),
+                        validation_steps=testX.shape[0] // batch_size, verbose=1)
+    return model
+
+def do_inferencing(model, testX):
+    yPreds = model.predict(testX)
+    #yPred = np.argmax(yPreds, axis=1)
+    # threshholds
+    yPred = list(map(lambda x: list(map(lambda y: find_class(y), x)), yPreds))
+    yPred_np = np.asarray(yPred)
+    return yPred_np
+
+def calculate_accuracy(model, testX, Y_test):
+    yPred_np = do_inferencing(model, testX)
+    accuracy = metrics.accuracy_score(Y_test, yPred_np) * 100
+    error = 100 - accuracy
+    print("Accuracy : ", accuracy)
+    print("Error : ", error)
+    return accuracy, error
+
 weights_file="weights/DenseNet-40-12-Chexpert.h5"
-if os.path.exists(weights_file):
-    #model.load_weights(weights_file, by_name=True)
-    print("Model loaded.")
 
-out_dir="weights/"
+if __name__ == "__main__":
+    model = create_model()
+    (trainX, Y_train), (testX, Y_test) = prepare_training_data()
+    generator = augument_training_data(trainX)
+    _, model = load_model(model, weights_file)
+    model = do_training(model, trainX, Y_train, testX, Y_test, weights_file)
+    accuracy, error = calculate_accuracy(model, testX, Y_test)
+'''
+1. read image
+2. format it
+3. call predict
+4. find class
+'''
+def do_inferencing_test(image_path: str, y_test):
+    model = create_model()
+    _, model = load_model(model, weights_file)
+    image_arr = np.array(img_util.convert_image(image_path))
+    y_pred = do_inferencing(model, image_arr)
+    accuracy = metrics.accuracy_score(y_pred, y_test) * 100
+    return accuracy
 
-lr_reducer      = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1),
-                                    cooldown=0, patience=5, min_lr=1e-5)
-model_checkpoint= ModelCheckpoint(weights_file, monitor="val_acc", save_best_only=True,
-                                  save_weights_only=True, verbose=1)
+def find_class(_val: float):
+    if _val < 0.2:
+        return 0
+    else:
+        return 1
 
-callbacks=[lr_reducer, model_checkpoint]
-
-model.fit_generator(generator.flow(trainX, Y_train, batch_size=batch_size),
-                    steps_per_epoch=len(trainX) // batch_size, epochs=nb_epoch,
-                    callbacks=callbacks,
-                    validation_data=(testX, Y_test),
-                    validation_steps=testX.shape[0] // batch_size, verbose=1)
-
-yPreds = model.predict(testX)
-#yPred = np.argmax(yPreds, axis=1)
-# threshholds
-yPred = list(map(lambda x: list(map(lambda y: round(y), x)), yPreds))
-yPred_np = np.asarray(yPred)
-yTrue = Y_test
-
-accuracy = metrics.accuracy_score(yTrue, yPred_np) * 100
-error = 100 - accuracy
-print("Accuracy : ", accuracy)
-print("Error : ", error)
+#def generate_arrays_from_file(path):
+#    while True:
+#        with open(path) as f:
+#            for line in f:
+#                # create numpy arrays of input data
+#                # and labels, from each line in the file
+#                x1, x2, y = process_line(line)
+#                yield ({'input_1': x1, 'input_2': x2}, {'output': y})
