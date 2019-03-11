@@ -101,20 +101,19 @@ def do_training(model, trainX, Y_train, testX, Y_test, weights_file, batch_size=
                         validation_steps=testX.shape[0] // batch_size, verbose=1)
     return model
 
-def do_inferencing(model, testX):
+def do_inferencing(model, testX, base_val):
     yPreds = model.predict(testX)
     #yPred = np.argmax(yPreds, axis=1)
     # threshholds
-    yPred = list(map(lambda x: list(map(lambda y: find_class(y), x)), yPreds))
+    yPred = list(map(lambda x: list(map(lambda y: find_class(y, base_val), x)), yPreds))
     yPred_np = np.asarray(yPred)
     return yPred_np
 
-def calculate_accuracy(model, testX, Y_test):
-    yPred_np = do_inferencing(model, testX)
+def calculate_accuracy(model, testX, Y_test, base_val):
+    yPred_np = do_inferencing(model, testX, base_val)
     accuracy = metrics.accuracy_score(Y_test, yPred_np) * 100
     error = 100 - accuracy
-    print("Accuracy : ", accuracy)
-    print("Error : ", error)
+    print("Base_val, Accuracy, Error : ", base_val, accuracy, error)
     return accuracy, error
 
 weights_file="weights/DenseNet-40-12-Chexpert.h5"
@@ -125,7 +124,10 @@ if __name__ == "__main__":
     generator = augument_training_data(trainX)
     _, model = load_model(model, weights_file)
     model = do_training(model, trainX, Y_train, testX, Y_test, weights_file)
-    accuracy, error = calculate_accuracy(model, testX, Y_test)
+    base_val = 0.0
+    while base_val < 1.0
+        accuracy, error = calculate_accuracy(model, testX, Y_test, base_val)
+        base_val += 0.1
 '''
 1. read image
 2. format it
@@ -140,8 +142,8 @@ def do_inferencing_test(image_path: str, y_test):
     accuracy = metrics.accuracy_score(y_pred, y_test) * 100
     return accuracy
 
-def find_class(_val: float):
-    if _val < 0.2:
+def find_class(_val: float, _base=0.5):
+    if _val < _base:
         return 0
     else:
         return 1

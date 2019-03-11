@@ -4,9 +4,6 @@ import os
 from utils import csv_reader as csv
 from utils import img_util as img
 
-WIDTH = 320
-HEIGHT = 320
-CHANNEL = 3
 '''
 returns (trainX, trainY), (testX, testY)
 trainX.shape: 50000, 320, 320, 3
