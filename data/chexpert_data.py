@@ -3,6 +3,7 @@ import os
 
 from utils import csv_reader as csv
 from utils import img_util as img
+import densenet
 
 '''
 returns (trainX, trainY), (testX, testY)
@@ -59,7 +60,7 @@ def load_data_sub(_file):
     csv_data = csv.read_csv(_file)
     csv_to_use = csv_data[1:]
     for idx, parts in enumerate(csv_to_use):
-        if idx == 10000:
+        if idx == 1000:
             break
         image, label_vec = process_line(parts)
         x_data.append(image)
@@ -73,6 +74,19 @@ def load_data(image_folder):
     x_valid, label_valid = load_data_sub(valid_file)
     return (np.array(x_train), np.array(label_train)), (np.array(x_valid), np.array(label_valid))
 
+def load_data_gen(image_folder, batch_size):
+    train_file = os.path.join(image_folder, 'train.csv')
+    gen_train = generate_batch_size(train_file, batch_size)
+    valid_file = os.path.join(image_folder, 'valid.csv')
+    gen_test = generate_batch_size(valid_file, batch_size)
+    return gen_train, gen_test
+
+def process_data(_features, _labels):
+    _type = 'float32'
+    _features = densenet.preprocess_input(_features.astype(_type))
+    _labels = _labels.astype(_type)
+    return _features, _labels
+
 def generate_batch_size(path:str, batch_size: int):
     csv_data = csv.read_csv(path)
     csv_to_use = csv_data[1:]
@@ -83,7 +97,7 @@ def generate_batch_size(path:str, batch_size: int):
         features.append(image)
         target.append(label_vec)
         if (idx + 1) % batch_size == 0:
-            yield (np.array(features), np.array(target))
+            yield process_data(np.array(features), np.array(target))
             features = []
             target = []
-    yield (np.array(features), np.array(target))
+    yield process_data(np.array(features), np.array(target))

@@ -22,18 +22,8 @@ from utils import img_util
 
 # training variables:
 batch_size = 8
-nb_epoch = 3
 
-# model variables
-threshhold = 0.1
-
-img_rows, img_cols = 320, 320
-img_channels = 3
-
-    
-    
-
-def create_model(img_channels=3, img_rows=320, img_cols=320, depth=40, activation='sigmoid'):
+def create_model(img_channels=3, img_rows=64, img_cols=64, depth=121, activation='sigmoid'):
     img_dim = (img_channels, img_rows, img_cols) if K.image_dim_ordering() == "th" else (img_rows, img_cols, img_channels)
     model = densenet.DenseNet(img_dim, depth=depth, nb_dense_block=3, growth_rate=12, nb_filter=-1, dropout_rate=0.0, classes=14, weights=None, activation=activation)
     print("Model created")
@@ -48,7 +38,7 @@ def create_model(img_channels=3, img_rows=320, img_cols=320, depth=40, activatio
 def prepare_training_data():
     folder = '/Volumes/work/data/medical/CheXpert-v1.0-small'
     #folder = '/home/mediratta/CheXpert-v1.0-small/'
-    (trainX, trainY), (testX, testY) = chexdata.load_data_generator(folder)
+    (trainX, trainY), (testX, testY) = chexdata.load_data(folder)
 
     _type = 'float32'
     trainX = trainX.astype(_type)
@@ -59,11 +49,15 @@ def prepare_training_data():
     trainX = densenet.preprocess_input(trainX)
     testX = densenet.preprocess_input(testX)
 
-    #Y_train = np_utils.to_categorical(trainY)
-    #Y_test = np_utils.to_categorical(testY)
     Y_train = trainY
     Y_test = testY
     return (trainX, Y_train), (testX, Y_test)
+
+def prepare_training_data_gen():
+    folder = '/Volumes/work/data/medical/CheXpert-v1.0-small'
+    #folder = '/home/mediratta/CheXpert-v1.0-small/'
+    gen_train, gen_test = chexdata.load_data_gen(folder, batch_size)
+    return gen_train, gen_test
 
 def augument_training_data(trainX):
     _type = 'int8'
@@ -78,14 +72,14 @@ def augument_training_data(trainX):
 
 # Load model
 def load_model(model, weights_file):
-    if os.path.exists(weights_file):
+    if False and os.path.exists(weights_file):
         model.load_weights(weights_file, by_name=True)
         print("Model loaded.")
         return True, model
     else:
         return False, model
 
-def do_training(model, generator, trainX, Y_train, testX, Y_test, weights_file, batch_size=16, nb_epoch=3):        
+def do_training(model, generator, trainX, Y_train, testX, Y_test, weights_file, batch_size=8, nb_epoch=3):        
     lr_reducer      = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1),
                                         cooldown=0, patience=5, min_lr=1e-5)
     model_checkpoint= ModelCheckpoint(weights_file, monitor="val_acc", save_best_only=True,
@@ -99,6 +93,19 @@ def do_training(model, generator, trainX, Y_train, testX, Y_test, weights_file, 
                         callbacks=callbacks,
                         validation_data=(testX, Y_test),
                         validation_steps=testX.shape[0] // batch_size, verbose=1)
+    return model
+
+def do_training_gen(model, gen_train, gen_test, weights_file, batch_size=8, nb_epoch=3):
+    lr_reducer      = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1),
+                                        cooldown=0, patience=5, min_lr=1e-5)
+    model_checkpoint= ModelCheckpoint(weights_file, monitor="val_acc", save_best_only=True,
+                                      save_weights_only=True, verbose=1)
+
+    callbacks=[lr_reducer, model_checkpoint]
+    model.fit_generator(gen_train,
+                        callbacks=callbacks,
+                        validation_data=gen_test,
+                        verbose=1)
     return model
 
 def do_inferencing(model, testX, base_val):
@@ -119,15 +126,28 @@ def calculate_accuracy(model, testX, Y_test, base_val):
 weights_file="weights/DenseNet-40-12-Chexpert.h5"
 
 if __name__ == "__main__":
+    import pdb
+    pdb.set_trace()
     model = create_model()
-    (trainX, Y_train), (testX, Y_test) = prepare_training_data()
-    generator = augument_training_data(trainX)
+    gen_train, gen_test = prepare_training_data_gen()
+#    generator = augument_training_data(trainX)
     _, model = load_model(model, weights_file)
-    model = do_training(model, generator, trainX, Y_train, testX, Y_test, weights_file)
+    model = do_training_gen(model, gen_train, gen_test, weights_file)
     base_val = 0.0
     while base_val < 1.0:
         accuracy, error = calculate_accuracy(model, testX, Y_test, base_val)
         base_val += 0.1
+        
+#if __name__ == "__main__":
+#    model = create_model()
+#    train_gen, test_gen = get_data_generators()
+##    generator = augument_training_data(trainX)
+#    _, model = load_model(model, weights_file)
+#    model = do_training(model, train_gen, trainX, Y_train, testX, Y_test, weights_file)
+#    base_val = 0.0
+#    while base_val < 1.0:
+#        accuracy, error = calculate_accuracy(model, testX, Y_test, base_val)
+#        base_val += 0.1        
 '''
 1. read image
 2. format it
