@@ -48,7 +48,7 @@ def create_model(img_channels=3, img_rows=320, img_cols=320, depth=40, activatio
 def prepare_training_data():
     folder = '/Volumes/work/data/medical/CheXpert-v1.0-small'
     #folder = '/home/mediratta/CheXpert-v1.0-small/'
-    (trainX, trainY), (testX, testY) = chexdata.load_data(folder)
+    (trainX, trainY), (testX, testY) = chexdata.load_data_generator(folder)
 
     _type = 'float32'
     trainX = trainX.astype(_type)
@@ -85,7 +85,7 @@ def load_model(model, weights_file):
     else:
         return False, model
 
-def do_training(model, trainX, Y_train, testX, Y_test, weights_file, batch_size=16, nb_epoch=3):        
+def do_training(model, generator, trainX, Y_train, testX, Y_test, weights_file, batch_size=16, nb_epoch=3):        
     lr_reducer      = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1),
                                         cooldown=0, patience=5, min_lr=1e-5)
     model_checkpoint= ModelCheckpoint(weights_file, monitor="val_acc", save_best_only=True,
@@ -123,9 +123,9 @@ if __name__ == "__main__":
     (trainX, Y_train), (testX, Y_test) = prepare_training_data()
     generator = augument_training_data(trainX)
     _, model = load_model(model, weights_file)
-    model = do_training(model, trainX, Y_train, testX, Y_test, weights_file)
+    model = do_training(model, generator, trainX, Y_train, testX, Y_test, weights_file)
     base_val = 0.0
-    while base_val < 1.0
+    while base_val < 1.0:
         accuracy, error = calculate_accuracy(model, testX, Y_test, base_val)
         base_val += 0.1
 '''
