@@ -30,7 +30,7 @@ img_channels = 3
 # ???
 img_dim = (img_channels, img_rows, img_cols) if K.image_dim_ordering() == "th" else (img_rows, img_cols, img_channels)
 
-depth = 20  # 121
+depth = 19  # 121
 nb_dense_block = 3  # ??
 growth_rate = 12 # ??
 nb_filter = -1  # ??
@@ -63,7 +63,6 @@ testX = densenet.preprocess_input(testX)
 #Y_test = np_utils.to_categorical(testY)
 Y_train = trainY
 Y_test = testY
-
 generator = ImageDataGenerator(rotation_range=15,
                                width_shift_range=5./32,
                                height_shift_range=5./32,

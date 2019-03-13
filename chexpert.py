@@ -23,6 +23,10 @@ from utils import img_util
 # training variables:
 batch_size = 8
 
+#training data vars
+training_data_sz = 223414
+valid_sz = 234
+
 def create_model(img_channels=3, img_rows=64, img_cols=64, depth=121, activation='sigmoid'):
     img_dim = (img_channels, img_rows, img_cols) if K.image_dim_ordering() == "th" else (img_rows, img_cols, img_channels)
     model = densenet.DenseNet(img_dim, depth=depth, nb_dense_block=3, growth_rate=12, nb_filter=-1, dropout_rate=0.0, classes=14, weights=None, activation=activation)
@@ -103,9 +107,10 @@ def do_training_gen(model, gen_train, gen_test, weights_file, batch_size=8, nb_e
 
     callbacks=[lr_reducer, model_checkpoint]
     model.fit_generator(gen_train,
+                        steps_per_epoch=training_data_sz // batch_size, epochs=nb_epoch,
                         callbacks=callbacks,
                         validation_data=gen_test,
-                        verbose=1)
+                        validation_steps=valid_sz // batch_size, verbose=1)
     return model
 
 def do_inferencing(model, testX, base_val):
@@ -130,7 +135,7 @@ if __name__ == "__main__":
     pdb.set_trace()
     model = create_model()
     gen_train, gen_test = prepare_training_data_gen()
-#    generator = augument_training_data(trainX)
+    generator = augument_training_data(trainX)
     _, model = load_model(model, weights_file)
     model = do_training_gen(model, gen_train, gen_test, weights_file)
     base_val = 0.0
