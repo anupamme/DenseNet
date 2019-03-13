@@ -22,6 +22,7 @@ from utils import img_util
 
 # training variables:
 batch_size = 8
+nb_epoch = 3
 
 #training data vars
 training_data_sz = 223414
@@ -83,7 +84,7 @@ def load_model(model, weights_file):
     else:
         return False, model
 
-def do_training(model, generator, trainX, Y_train, testX, Y_test, weights_file, batch_size=8, nb_epoch=3):        
+def do_training(model, generator, trainX, Y_train, testX, Y_test, weights_file):        
     lr_reducer      = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1),
                                         cooldown=0, patience=5, min_lr=1e-5)
     model_checkpoint= ModelCheckpoint(weights_file, monitor="val_acc", save_best_only=True,
@@ -99,7 +100,7 @@ def do_training(model, generator, trainX, Y_train, testX, Y_test, weights_file, 
                         validation_steps=testX.shape[0] // batch_size, verbose=1)
     return model
 
-def do_training_gen(model, gen_train, gen_test, weights_file, batch_size=8, nb_epoch=3):
+def do_training_gen(model, gen_train, gen_test, weights_file):
     lr_reducer      = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1),
                                         cooldown=0, patience=5, min_lr=1e-5)
     model_checkpoint= ModelCheckpoint(weights_file, monitor="val_acc", save_best_only=True,
@@ -131,11 +132,9 @@ def calculate_accuracy(model, testX, Y_test, base_val):
 weights_file="weights/DenseNet-40-12-Chexpert.h5"
 
 if __name__ == "__main__":
-    import pdb
-    pdb.set_trace()
     model = create_model()
     gen_train, gen_test = prepare_training_data_gen()
-    generator = augument_training_data(trainX)
+    #generator = augument_training_data(trainX)
     _, model = load_model(model, weights_file)
     model = do_training_gen(model, gen_train, gen_test, weights_file)
     base_val = 0.0

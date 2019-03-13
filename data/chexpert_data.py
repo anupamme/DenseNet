@@ -45,12 +45,19 @@ def replace_label(item):
             return 1   # multi_class classification
         else:
             return _fitem
+        
+def filter_labels(labels: list, allowed_indices=[2,6,8,9,10,12]):
+    _val = []
+    for idx, value in enumerate(labels):
+        if idx in allowed_indices:
+            _val.append(value)
+    return _val
 
 def process_line(parts):
     base_path = '/Volumes/work/data/medical'
 #    base_path = '/home/mediratta/'
     rel_path = parts[0]
-    label_vec = list(map(lambda x: replace_label(x), parts[5:]))
+    label_vec = list(map(lambda x: replace_label(x), filter_labels(parts[5:])))
     image = img.convert_image(os.path.join(base_path, rel_path))
     return image, label_vec
 
@@ -81,10 +88,11 @@ def load_data_gen(image_folder, batch_size):
     gen_test = generate_batch_size(valid_file, batch_size)
     return gen_train, gen_test
 
+
 def process_data(_features, _labels):
     _type = 'float32'
-    _features = densenet.preprocess_input(_features.astype(_type))
-    _labels = _labels.astype(_type)
+    _features = densenet.preprocess_input(np.array(_features).astype(_type))
+    _labels = np.array(_labels).astype(_type)
     return _features, _labels
 
 def generate_batch_size(path:str, batch_size: int):
@@ -97,7 +105,7 @@ def generate_batch_size(path:str, batch_size: int):
         features.append(image)
         target.append(label_vec)
         if (idx + 1) % batch_size == 0:
-            yield process_data(np.array(features), np.array(target))
+            yield process_data(features, target)
             features = []
             target = []
-    yield process_data(np.array(features), np.array(target))
+    yield process_data(features, target)
