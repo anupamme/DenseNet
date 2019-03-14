@@ -23,6 +23,7 @@ from utils import img_util
 # training variables:
 batch_size = 8
 nb_epoch = 3
+nb_classes = 6
 
 #training data vars
 training_data_sz = 223414
@@ -30,7 +31,7 @@ valid_sz = 234
 
 def create_model(img_channels=3, img_rows=64, img_cols=64, depth=121, activation='sigmoid'):
     img_dim = (img_channels, img_rows, img_cols) if K.image_dim_ordering() == "th" else (img_rows, img_cols, img_channels)
-    model = densenet.DenseNet(img_dim, depth=depth, nb_dense_block=3, growth_rate=12, nb_filter=-1, dropout_rate=0.0, classes=14, weights=None, activation=activation)
+    model = densenet.DenseNet(img_dim, depth=depth, nb_dense_block=3, growth_rate=12, nb_filter=-1, dropout_rate=0.0, classes=nb_classes, weights=None, activation=activation)
     print("Model created")
     model.summary()
     optimizer = Adam(lr=1e-4) # Using Adam instead of SGD to speed up training
@@ -39,20 +40,10 @@ def create_model(img_channels=3, img_rows=64, img_cols=64, depth=121, activation
     print("Building model...")
     return model
 
-
 def prepare_training_data():
     folder = '/Volumes/work/data/medical/CheXpert-v1.0-small'
     #folder = '/home/mediratta/CheXpert-v1.0-small/'
     (trainX, trainY), (testX, testY) = chexdata.load_data(folder)
-
-    _type = 'float32'
-    trainX = trainX.astype(_type)
-    testX = testX.astype(_type)
-    trainY = trainY.astype(_type)
-    testY = testY.astype(_type)
-
-    trainX = densenet.preprocess_input(trainX)
-    testX = densenet.preprocess_input(testX)
 
     Y_train = trainY
     Y_test = testY
@@ -140,31 +131,25 @@ if __name__ == "__main__":
     base_val = 0.0
     while base_val < 1.0:
         accuracy, error = calculate_accuracy(model, testX, Y_test, base_val)
-        base_val += 0.1
-        
-#if __name__ == "__main__":
-#    model = create_model()
-#    train_gen, test_gen = get_data_generators()
-##    generator = augument_training_data(trainX)
-#    _, model = load_model(model, weights_file)
-#    model = do_training(model, train_gen, trainX, Y_train, testX, Y_test, weights_file)
-#    base_val = 0.0
-#    while base_val < 1.0:
-#        accuracy, error = calculate_accuracy(model, testX, Y_test, base_val)
-#        base_val += 0.1        
+        base_val += 0..01
+
 '''
-1. read image
-2. format it
-3. call predict
-4. find class
+1. load model
+2. load validation data
+3. call accuracy 
+4. 
 '''
-def do_inferencing_test(image_path: str, y_test):
+def calculate_threshholds():
     model = create_model()
     _, model = load_model(model, weights_file)
-    image_arr = np.array(img_util.convert_image(image_path))
-    y_pred = do_inferencing(model, image_arr)
-    accuracy = metrics.accuracy_score(y_pred, y_test) * 100
-    return accuracy
+    (_, _), (testX, testY) = chexdata.load_data(folder, load_train=False)
+    _, model = load_model(model, weights_file)
+    base_val = 0.00
+    while base_val < 1.0:
+        accuracy, error = calculate_accuracy(model, testX, testY, base_val)
+        print('base_val, accuracy: ' + str(base_val) + '; ' str(accuracy))
+        base_val += 0.01
+        
 
 def find_class(_val: float, _base=0.5):
     if _val < _base:

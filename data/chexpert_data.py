@@ -74,12 +74,15 @@ def load_data_sub(_file):
         x_label.append(label_vec)
     return x_data, x_label
 
-def load_data(image_folder):
-    train_file = os.path.join(image_folder, 'train.csv')
-    x_train, label_train = load_data_sub(train_file)
-    valid_file = os.path.join(image_folder, 'valid.csv')
-    x_valid, label_valid = load_data_sub(valid_file)
-    return (np.array(x_train), np.array(label_train)), (np.array(x_valid), np.array(label_valid))
+def load_data(image_folder, load_train=True, load_valid=True):
+    x_train, label_train, x_valid, label_valid = []
+    if load_train:
+        train_file = os.path.join(image_folder, 'train.csv')
+        x_train, label_train = load_data_sub(train_file)
+    if load_valid:
+        valid_file = os.path.join(image_folder, 'valid.csv')
+        x_valid, label_valid = load_data_sub(valid_file)
+    return (np.array(process_data(x_train)), np.array(process_data(label_train))), (np.array(process_data(x_valid)), np.array(process_data(label_valid)))
 
 def load_data_gen(image_folder, batch_size):
     train_file = os.path.join(image_folder, 'train.csv')
